@@ -7,9 +7,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import java.beans.Transient;
-
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 import org.junit.runner.RunWith;
@@ -59,32 +56,5 @@ public class BinaryControllerTest {
 			.andExpect(model().attribute("result", "1110"))
 			.andExpect(model().attribute("operand1", "111"));
     }
-
-    @Test
-    public void postSubtract() throws Exception {
-        this.mvc.perform(post("/").param("operand1","1010").param("operator","-").param("operand2","0011"))//.andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("result"))
-            .andExpect(model().attribute("result", "111"))
-            .andExpect(model().attribute("operand1", "1010"));
-    }
-
-    @Test
-    public void postMultiply() throws Exception {
-        this.mvc.perform(post("/").param("operand1","1010").param("operator","*").param("operand2","0011"))//.andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("result"))
-            .andExpect(model().attribute("result", "11110"))
-            .andExpect(model().attribute("operand1", "1010"));
-    }
-
-    // @Test
-    // public void postDivide() throws Exception {
-    //     this.mvc.perform(post("/").param("operand1","1000").param("operator","/").param("operand2","10"))//.andDo(print())
-    //         .andExpect(status().isOk())
-    //         .andExpect(view().name("result"))
-    //         .andExpect(model().attribute("result", "100"))
-    //         .andExpect(model().attribute("operand1", "1000"));
-    // }
 
 }

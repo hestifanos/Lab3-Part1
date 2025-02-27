@@ -1,277 +1,324 @@
-# Lab 3 Part 2: Continuous Integration and Continuous Delivery (Jenkins)
-## Objective   
-1. Get Familiar with Jenkins.
-2. Understand the pipeline syntax used by Jenkins!
-3. Configure a continuous integration pipeline for a Jenkins job! 
-4. Configure a continuous deployment pipeline for a Jenkins job!
-## Repository:   
-[https://github.com/zubxxr/SOFE3980U-Lab3-Part2](https://github.com/zubxxr/SOFE3980U-Lab3-Part2) 
+# Lab 3 Part 1: Deploying using Google Kubernetes Engine
 
-## Introduction and Getting Started 
-1. Watch the following video about [Dev-ops](https://www.youtube.com/watch?v=LFDrDnKPOTg). 
-2. Install Jenkins Server on GCP, using Helm. Helm is a tool that creates customized applications within Kubernetes.
-   1. Watch the following video about [Helm](https://www.youtube.com/watch?v=fy8SHvNZGeE).
-   2. If there is no Kubernetes cluster within your GCP project, Create a cluster as illustrated in [Lab 3 Part 1](https://github.com/zubxxr/SOFE3980U-Lab3-Part1#setup-google-kubernetes-engine-gke). To get the cluster information.
+After creating the web application, it has to be deployed. This web application will be containerized into a **Docker image**. Then, the container would be deployed over the **Google Cloud Platform (GCP)** using a container orchestrating tool (**Kubernetes**).
+
+# Table of Contents
+
+1. [Creating GCP account](#creating-gcp-account)
+2. [Setting up Google Kubernetes Engine (GKE)](#setting-up-google-kubernetes-engine-gke)
+3. [Deploy MySQL server on GKE](#deploy-mysql-server-on-gke)
+4. [Deployment using YAML files (the easy way)](#deployment-using-yaml-files-the-easy-way)
+5. [Deploy The Maven Project](deploy-the-maven-project)
+6. [Discussion](#discussion)
+7. [Design](#design)
+8. [Deliverables](#deliverables)
+
+## Objectives:
+1. Get Familiar with Docker and Kubernetes.
+2. Use Google Cloud Platform.
+3. Deploy Maven WebApp over Google Kubernetes Engine (GKE).
+
+## Repository:
+[https://github.com/zubxxr/SOFE3980U-Lab3-Part1](https://github.com/zubxxr/SOFE3980U-Lab3-Part1)
+
+Docker, Kubernetes and GKE
+1.	Watch The following video to understand [Docker terminologies](https://youtu.be/rOTqprHv1YE).  
+2.	To manage Docker images and applications, we will use Kubernetes; the following video explains [Kubernetes and its components](https://youtu.be/cC46cg5FFAM).
+
+## Creating GCP account
+1. Creating a new Gmail account is recommended, but you can use an existing one if it still allows you a free trial (**don't use the university's official email**).
+2. Go to the [GCP official site](https://cloud.google.com/gcp). Be sure that you are using the correct account. Then, click on **Get Started for Free** button 
+
+    ![a1](figures/a1.jpg)  
+
+3. Fill the account information and accept the terms of service. 
+
+    ![a2](figures/a2.jpg)  
+
+4. In the next step, you will fill in your personal and credit card information. That information is to ensure that you are a real person. This will create a free account for 90 days and give you 300+ $ free credits. **No charges are made unless you upgrade to a paid Cloud Billing account**. Please read [the GCP billing verification](https://cloud.google.com/free/docs/free-cloud-features#billing_verification) for more information.  
+
+    ![a3](figures/a3.jpg)  
+
+5.	Fill in the final survey. Then, click **Done**. You can safely skip any given offers.  
+
+    ![a4](figures/a4.jpg)  
+
+6.	Get yourself familiar with
+   * **the Dashboard**: allows you to search and select available cloud services
+   * **project(s)**: a project usually named **My First Project** will be created by default. You can create, edit, and delete projects.
+   * **the console**: By clicking the console icon, the console open for you. The console is a Linux terminal that can be used to configure the cloud. Any commands affecting the console's local OS will be temporary and lost whenever the session is closed, while any change made to cloud services will be permanent.
+     
+        ![a5](figures/a5.jpg)  
+      
+        The console will be opened at the bottom of the page, as shown in the following figure, and from it, files and folders can be exchanged with your local computer by downloading or uploading them. You can also click the **Open Editor** button to open the editor.
+      
+        ![a6](figures/a6.jpg)  
+
+   * **the editor**: It’s a text editor that allows you to edit plain text files, as shown in the following figure. You can switch back to the console by clicking the **Open Terminal** button. 
+
+        ![a7](figures/a7.jpg)  
+      
+## Setting up Google Kubernetes Engine (GKE)
+To set up Google Kubernetes Engine (**GKE**), open the console of the project you have created within the Google Cloud Platform (GCP) during the first milestone.
+1. Set the default compute zone to **northamerica-northeast1-b**
+   
+   ```cmd
+   gcloud config set compute/zone northamerica-northeast1-b  
+   ```
+    
+2. Enable GKE by searching for **Kubernetes Engine**. Select **Kubernetes Engine API**. Then, click **Enable**.
+   
+   ![MS3 figure1](figures/cl3-1.jpg)
+   
+3. Wait until the API is enabled. Then, create a three-node cluster on GKE called **sofe3980u**. A Node is a worker machine in which docker images and applications can be deployed.
+   
+   ```cmd
+   gcloud container clusters create sofe3980u --num-nodes=3 
+   ```
+      
+   **Note**: if the authorization windows pop up, click Authorize
+   
+   **Note**: if you get an error that there are no available resources to create the nodes, you may need to change the default compute zone (e.g., to **us-central1-a**) or reduce the number of nodes.
+
+## Deploy MySQL server on GKE
+We will deploy a pre-existing MySQL image as an example of a Docker image.
+1. Through the console of your GCP project, execute the following command to pull the MySQL image and deploy it over a pod in GKE.
+   ```cmd
+   kubectl create deployment mysql-deployment --image mysql/mysql-server --port=3306 
+   ```
+   Deployment's role is to orchestrate docker applications. It would pull the **mysql/mysql-server** Docker image and deploy and enable the **3306** port number to allow access from the outside world. **mysql-deployment** is the name that Kubernetes will use to access this deployment. Only one pod (replica) will be created per deployment by default.
+2. The following command checks the status of the deployment 
+   ```cmd
+   kubectl get deployments 
+   ```
+   A tip to make it easier is to add the **--watch** argument to the command. You can use this argument for the commands below as well, such as get pods, get service, etc. And if you would like to terminate the command, just press **CTRL+C**.
+  
+   ```cmd 
+   kubectl get deployment --watch
+   ```
+
+3. While the following command accesses the status of the pod 
+   ```cmd
+   kubectl get pods 
+   ```
+   Check that the deployment is available and that the pod is running successfully (it may take some time until everything is settled down) 
+4. To access the MySQL logs,
+   1. According to the [image documentation](https://dev.mysql.com/doc/refman/8.0/en/linux-installation-docker.html), the root password will be generated randomly because we didn't specify it during pod creation. To get that password, we access the logs generated locally by the pod and search them for the line containing the randomly generated password. This can be achieved using the following command after replacing **\<pod-name\>** with the pod name obtained by the previous step.
       ```cmd
-      kubectl cluster-info 
-      ``` 
-   3. Pull the Jenkins Helm chart from a repository! 
-      ```cmd
-      helm repo add jenkinsci https://charts.jenkins.io
-      helm repo update
+      kubectl logs <pod-name> |grep GENERATED 
       ```
-   4. Clone the repository for the Helm values.
-      ```cmd
-      cd ~
-      git clone https://github.com/zubxxr/SOFE3980U-Lab3-Part2
+      Also, accessing the logs of a pod helps a lot in troubleshooting it in case of an error or a crash. 
+   2. You  can  access  the  database  by  running  the  command  **mysql**  within  the  pod,  by  using  the following command 
+      ``` cmd
+      kubectl exec -it  <pod-name>  -- mysql -uroot -p 
       ```
-   5. Use the Helm CLI to deploy the chart **cd-jenkins** with the configuration set from the repository **jenkins/values.yaml** onto Kubernetes with the name **cd-jenkins**.
-      ```cmd
-      helm install cd-jenkins -f ~/SOFE3980U-Lab3-Part2/jenkins/values.yaml jenkinsci/jenkins --wait
+      Kubernetes exec command allows you to execute a particular command within a specific pod in interactive (-i option) and by using the Linux terminal (-t option). The command we want to execute is mysql which opens a CLI to the MySQL database. It has two options: **-u** followed by the username, i.e., root, and **-p** followed by the root password you got. **Note** that there is no whitespace between the **-u** and **root**.
+      **Note**: for security reasons, the password remains invisible while you type or paste it.
+   4. After successful login to the MySQL server, it's recommended to change the root password using the following MySQL command (don't forget to replace **\<new-password\>** with a password of your choice). 
+      ```sql
+      ALTER USER 'root'@'localhost' IDENTIFIED BY '<new-password>' ; 
       ```
-   6. **(optional)** to remove the **cd-jenkins** from Kubernetes. **<ins>Don’t run it now</ins>**.
-      ```cmd
-      helm uninstall cd-jenkins
+   5. Then you can run any MySQL command, like 
+      ``` cmd
+      show databases; 
       ```
-   7. Retrieve Jenkins external IP,
+      to display all available schemas.
+   6. To exit drom the MySQL CLI, execute 
+      ```sql
+      exit 
+      ```
+   7. To login again to the CLI, use the new password after the **-p** option in the mysql command
+      ```cmd
+      kubectl exec -it  <pod-name>  -- mysql -uroot -p<root-password> 
+      ```
+      Again, there are no whitespaces between -p and the password
+   8. To create a new user, called **user** with a password **sofe3980u**, and give all permissions to the user, use the following MySQL command 
+      ```cmd
+      CREATE USER 'user'@'%' IDENTIFIED BY 'sofe3980u'; 
+      GRANT ALL PRIVILEGES ON *.* TO 'user'@'%' WITH GRANT OPTION; 
+      ```
+   9. Exit from the MySQL CLI.
+5. To associate the deployment with an IP address,
+   1. A load Balancer service, **mysql-service**, should be created for that deployment. The load Balancer distributes the requests and workload between the replicas in the deployment (why this is not important in our case?) and associates an IP to access the deployed application.
+      ```cmd
+      kubectl expose deployment mysql-deployment --type=LoadBalancer --name=mysql-service 
+      ```
+      
+      You can add two options: **--port** specifying the service port number and **--target-port** specifying the pod port number. If not specifies, both will be the same as the port numbers already exposed via the deployment command. 
+   2. To check the status of the service, use the following command
+      ``` cmd
+      kubectl get service 
+      ```
+      It may take some time until the external IP address is changed from pending to a valid IP address. You may need to repeat the previous command or add the **--watch** flag until the IP becomes available.
+      
+      ![MS3 figure4](figures/cl3-4.jpg)      
+
+   3. Once you get a valid external IP address, you can use it to connect to the deployed MySQL server from any machine. For example, to connect to it from the GCP console, run the following command after replacing **\<IP-address\>** with the obtained IP.
+      ```cmd
+      mysql -uuser -psofe3980u -h<IP-address> 
+      ```
+      
+   4.  exit from the MySQL CLI.
+      
+7. To delete the deployment and the service
+   ```cmd
+   kubectl delete deployment mysql-deployment 
+   kubectl delete service mysql-service 
+   ```
+   
+## Deployment using YAML files (the easy way)
+In this section, the MySQL image will be deployed over the GKE cluster using YAML files. A YAML file contains the configuration used to set the deployment and the service.
+1. Clone the GitHub repository
+   ```cmd 
+   cd ~
+   git clone https://github.com/zubxxr/SOFE3980U-Lab3-Part1
+   ```
+2. Run the following command to deploy the MySQL server 
+   ```cmd 
+   cd ~/SOFE3980U-Lab3-Part1/MySQL
+   kubectl create -f mysql-deploy.yaml
+   ```
+   The command will deploy the template stored in the **mysql-deploy.yaml** into GKE. The file is shown in the following figure and can be interpreted as:
+   * **Indentation** means nested elements
+   *	**Hyphen** means an element within a list
+   *	**First two lines**: indicate the type of the YAML configuration and its version.
+   *	**Line 4**: provides a name for the deployment.
+   *	**Line 6**: indicates that only a single pod will be used
+   *	**Line 9**: provides the name of the application that the pod accesses.
+   *	**Line 16**: provides the ID of the Docker image to be deployed
+   *	**Lines 19-24**: define image-dependent environment variables that define username/password (**user/sofe3980u**) and a schema (**Readings**).
+   *	**Line 26**: defines the port number that the image uses.
+      
+      ![MS3 figure2](figures/cl3-2.jpg) 
+
+   You can refer to the documentation of the **mysql/mysql-server** Docker image for the list of all supported environment variables (like those in lines 19:26) and their usage.
+3. The following command checks the status of the deployment
+   ```cmd 
+   kubectl get deployment 
+   ```
+4. The following command prints the status of pods
+   ```cmd 
+   kubectl get pods  
+   ```
+   Check the deployment's availability and the pod's successful running (it may take some time until everything is settled down).
+   
+6. To associate an IP to the deployment
+   1. A load Balancer service should be created using the mysql-service.yaml file from the cloned GitHub
       ```cmd 
-      kubectl get services
+      cd ~/SOFE3980U-Lab3-Part1/MySQL
+      kubectl create -f mysql-service.yaml
       ```
-
-      ![sq4_1](figures/sq4_1.jpg)
-    
-   8. Access Jenkins server using the following URL http://\<jenkinsIP\>:8080. Where \<jenkinsIP\> is the IP obtained in the previous step. It should look like
-
-      ![sq4_2](figures/sq4_2.jpg)
-    
-      To fix a connection issue, click Manage Jenkins, select Security, and check Enable proxy compatibility under CSRF Protection. Click the save button. (Note: the connection issue won't be fixed until the configuration is saved. You may need to repeat this step until the configuration is saved) 
-
-   9. To fix a connection issue, click **Manage Jenkins**, select **Security**,and check **Enable proxy compatibility** under **CSRF Protection**. Click the **save** button. (Note: the connection issue won’t be fixed until the configuration is saved. You may need to repeat this step until the configuration is saved)
-   
-      ![sq4_3](figures/sq4_3.jpg)
-   
-## Protect Jenkins by Setting a Username and Password
-1. Click **Manage Jenkins**, select **Security**, set the **Security Realm** to **Jenkins' own user database**, set the **Authentication** to **Logged-in users can do anything**, and uncheck **Allow users to sign up** and **Allow anonymous  read access**. Finally, click the **save** button.
-   
-   ![pd_1](figures/pd_1.jpg)
-   
-3. Then, Jenkins forwards you to another page to set the username and password for the admin.
-   
-   ![pd_2](figures/pd_2.jpg)
-   
-## Create a Maven project job
-1. Create a GitHub account if you don't have one. Fork this [repository](https://github.com/zubxxr/SOFE3980U-Lab3-Part2).
-2. Create a GitHub token: Within the GitHub page, login into your account. Choose  **settings**, **Developer settings**, **Personal access token**, and **Token (classic)**. Click **Generate new token**. Select **Generate new token (classic)**. Set the note, check **public_repo**, and click **Generate token**. Finally, copy the token code.
-   - **Make sure to copy and store it because you will not be able to see it again after leaving that page. You will have to regenerate it if you do, which is not an issue, but the token code will change.**
-   
-   ![sq4_7](figures/sq4_7.jpg)
-   
-4. Install **Pipeline Maven Integration** Plugin: select **Dashboard**, **Manage Jenkins**, then **Manage Plugins**. Choose **Available Plugins**. Search for **Pipeline Maven Integration**. After checking it, click **Download now and install after restart**. Check **Restart Jenkins when installation is complete and no jobs are running**. Finally, wait until the plugin is installed and Jenkins restarts.
-
-   ![sq4_4](figures/sq4_4.jpg)
-   
-5. Repeat the previous step to install **Maven Integration** and  **GitHub** plugins
-6. Configure GitHub Plugin
-   1. Select **Dashboard**, **Manage Jenkins**, then **System**. Scroll down to the **GitHub** section. Click the **Add GitHub Server** button. Name it, **github**. Finally, click **Add**.
-
-      ![sq4_8](figures/sq4_8.jpg)
+      The important lines in the mysql-service.yaml file are:
+      * **Line 8**: the port number that will be assigned to the external IP.
+      * **Line 10**:  the name of the application the service targets.
       
-   2. Select the **kind** to be **Secret text**. Type the Github token obtained previously in the **Secret** textbox. Set its **ID** to be **GitHub_token**. Finally, click **ADD**.
-
-      ![sq4_9](figures/sq4_9.jpg)
-      
-   3. Set the **credential** to **GitHub_token**. Test the connection. Then, click **Save**.
-
-      ![sq4_10](figures/sq4_10.jpg)
-      
-7. Configure Maven Plugin: select **Dashboard**, **Manage Jenkins**, **Tools**, choose **Add Maven**, name it **maven**, choose **Install automatically**, then click **Save**.
-
-   ![sq4_5](figures/sq4_5.jpg)
+         ![MS3 figure3](figures/cl3-3.jpg)      
    
-8. Create a Job: select **Dashboard**. Click **New Item**. Name it **binaryCalculate_mvn**, and choose **Maven Project**. Finally, click **Ok**.
-
-   ![sq4_6](figures/sq4_6.jpg)
+   2. To print the status of the service, use this command 
+      ```cmd 
+      kubectl get service 
+      ```
+      ![MS3 figure4](figures/cl3-4.jpg)      
+      
+      It may take some time until the external IP address is changed from pending to a valid IP address. You may need to repeat the previous command.
+7. To access the MySQL server using the IP address,
+   1. Run the following commands from the GCP console (or any other device on which the MySQL client is installed). Before running the command, replace the **\<IP-address\>** with the external IP obtained in the previous step. The options **-u**, **-p**, and **-h** specify the deployed server's **username**, **password**, and **host IP**, respectively.
+      
+      ```cmd
+      mysql -uuser -psofe3980u -h<IP-address>
+      ```
+      
+   2. Try to run the following SQL statements 
+      ```sql
+      use Readings; 
+      create table meterType( ID int, type varchar(50), cost float); 
+      insert into meterType values(1,'boston',100.5); 
+      insert into meterType values(2,'denver',120); 
+      insert into meterType values(3,'losang',155); 
+      select * from meterType where cost>=110; 
+      ```
+   4. Exit the MySQL CLI, by running
+      ```sql
+      exit
+      ```
    
-9. Configure the job: The job will automatically pull the repository for each commit. Then, the maven project is built, and the status is sent back to the repository associate it with the commit.
-   1. For **Source Code Management**, select **Git**. Fill in the **Repository URL**. Make sure that the **branch** is blank.
-
-      ![sq4_11](figures/sq4_11.jpg)
+   5. To delete the deployment and the service, use the following command 
+       ```cmd
+      cd ~/SOFE3980U-Lab3-Part1/MySQL
+      kubectl delete -f mysql-deploy.yaml
+      kubectl delete -f mysql-service.yaml
+      ```  
+## Deploy The Maven Project
+ new Docker image will be created in this section based on a previous version of the Maven project created at the second milestone, **BinaryCalculatorWebapp**, which will be converted into a Docker image. GKE will be used to Deploy it.
+1. From the GCP console, change the current directory to the path **/BinaryCalculatorWebapp** at the cloned repository. Then, build the application to generate the WAR file. 
+   ```cmd
+   cd ~/SOFE3980U-Lab3-Part1/BinaryCalculatorWebapp
+   mvn package
+   ```
+2. The path also contains another file, **Dockerfile**. It contains the steps necessary to create the docker image. The steps can be summarized as:
+   * line 1: starting with a base image.
+   * line 2: create a volume **tmp** used by the TomCat server for temporary files.
+   * line 3: copy the war file(s) from the path ./target at the host machine to the working directory at the docker image.
+   * line 4: run the web application
+   
+      ![Dockerfile](figures/d1.JPG)         
       
-   2. In the **build triggers** section, check **GitHub hook trigger for GITScm polling** to automatically start the job for each new commit to the repository.
+3. the generated Docker image has to be stored globally. Thus, a Docker repo will be created in the GCP project.
+   * Search for **Artifact Registry**
+     
+     ![Artifact Registry](figures/d2_v2.jpg)         
+   
+   * In the **repositories** tab, press the **+** button to create a new repo.
 
-      ![sq4_12](figures/sq4_12.jpg)
+     ![create a new repo](figures/d3_v2.jpg)
+     
+   * Name it **sofe3980u** and ensure that the type is set to **Docker**. Set the region to "northamerica-northeast2 (Toronto)". Finally, press **create**.
+
+     ![create a new repo (2)](figures/d4.jpg)
+     
+   * open the **sofe3980u** repository and  copy the repository path.
+
+     ![create a new repo (2)](figures/d5.jpg)
+
+4. To create a docker image using the **Dockerfile**, run the following command after replacing **\<repo-path\>** with the repository path you already copied in the previous step.
+   ```cmd
+   docker build -t <repo-path>/binarycalculator .
+   ```
+   
+5. To use the image globally, it should be pushed into the **sofe3980u** repository in the **Artifact registry**.
+      ```cmd
+      docker push <repo-path>/binarycalculator
+      ```
       
-   3. In the **build** section, set the path of the **pom** file in the repository and the build options.
+6. To deploy the image using GKE
+   ```cmd
+   kubectl create deployment binarycalculator-deployment --image <repo-path>/binarycalculator --port=8080 
+   ```
 
-      ![sq4_13](figures/sq4_13.jpg)
-      
-   4. In the **Post-build Actions** section, **set GitHub commit status (universal)**, which will associate the GitHub commit with the status of the Jenkins job. Change the **Status result:** to **One of the default messages and statuses**.
-
-      ![sq4_14](figures/sq4_14.jpg)
-      
-   5. Click **Save**.
-      
-10. To allow Jenkins to start running after each commit automatically, a **webhook** has to be configured in the GitHub repository.
-   1. Within the repository page in the Github, select **Settings**. Select **Webhooks**. Then, click **Add webhook**.
-
-      ![sq4_15](figures/sq4_15.jpg)
-      
-   2. Set the **Payload URL** to http://\<jenkinsIP\>:8080/github-webhook/ and the content type to JSON. Then, click **Add webhook**.
-
-      ![sq4_16](figures/sq4_16.jpg)
-      
-11. The job will start building once you commit any changes to the repository (or you can trigger it by editting the readme file).
-    
-    1. To check the status of each run or to build the job manually, navigate to the job page within Jenkins.
-
-       ![sq4_17](figures/sq4_17.jpg)
-      
-    2. The commit in the GitHub will also have a checkmark and a link to the Jenkins build report.
-
-       ![sq4_18](figures/sq4_18.jpg)
-
-
-## Create a Jenkins job using a script.
-The Other way is to create a customized job by providing a script (**Jenkinsfile**) that describes the Job as a pipeline of stages that would be executed. This method is more flexible. The Jenkinsfile already exists in the repository at the path /BinaryCalculatorWebapp/. 
-1.	Watch this video about [the pipeline syntax]( https://www.youtube.com/watch?v=pzbrVVy6ul4)
-2.	Read the file [/BinaryCalculatorWebapp/Jenkinsfile](/BinaryCalculatorWebapp/Jenkinsfile) 
-    * It defines a pipeline of tasks
-    * The first stage in the pipeline is called **Init**. This will print a welcome string and list the current directory that contains the cloned repository.
-    * The second stage, **test**, runs the test cases for the project defined at the path **./BinaryCalculatorWebapp/**.
-    * The third stage, **build**, builds the project defined at the path **./BinaryCalculatorWebapp/**.
-    * The last stage, **Deploy**, is a dummy stage that only displays a string
-3.	Go to Jenkins' **Dashboard**. Click **New Item**. Name it **BinaryCalculator_pipeline**. Choose the type to be **Pipeline**.
-4.	In the configuration page,
-   1. In the **Triggers** section, check **GitHub hook trigger for GITScm polling**.
-   2. In the **Pipeline** section, 
-      * Set the **Definition** to **Pipeline script from SCM**.
-      * Set the **SCM** to **Git**
-      * Set the **Repository URL** to your GitHub link.
-      * Set the **branches to build** to ***/main**.
-        
-           ![image](https://github.com/user-attachments/assets/462a065b-e779-48a7-b0d8-3efdac247e5f)
-
-      * Set the **Script Path** to BinaryCalculatorWebapp/Jenkinsfile
-5.	As the **webhook** is already configured, it should work automatically when  after each commit. Commit any change to the repository. Then, check that the job is been executed and check its report.
-
-## Continuous Integration / Continuous Deployment (CICD) using Jenkins
-
-A continuous deployment will be added to the previous Jenkins Job. 
-
-### 1. Create a tunnel to GKE
-
-As Jenkins runs in GKE, we will use a tunnel created with Jenkins to connect to GKE and use Docker containers as Jenkins nodes (workers).
-1. In the Jenkins user interface, select **Manage Jenkins**.
-2. Click **Clouds**.
-3. Click **New cloud**.
-4. Type any name under **Cloud name** and then select **Kubernetes** for Type.
-5. Click **Create**.
-6. In the **Jenkins URL** field, enter the following value:
-    ``` txt
-    http://cd-jenkins:8080
-    ```
-7. In the **Jenkins tunnel** field, enter the following value:
-    ``` txt
-    cd-jenkins-agent:50000
-    ```
-8. Click **Save**.
-
-### 2. Create a Service Account and Record needs information from GCP
-We will start by creating a service account. It permits dealing with the **Artifact Registry** and **GKE** from any device. A JSON key will be generated and downloaded to your computer to allow you to use the service account
-1. In the console of GCP, run
-    ``` cmd
-    cd ~
-    
-    gcloud iam service-accounts create jenkins-sa
-
-    gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-        --member "serviceAccount:jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" \
-        --role "roles/cloudbuild.builds.builder"
-   	
-    gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-        --member "serviceAccount:jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" \
-        --role "roles/container.clusterAdmin"
-   	
-    gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-        --member "serviceAccount:jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" \
-        --role "roles/container.admin"
-    
-    gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-    --member "serviceAccount:jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" \
-    --role "roles/iam.serviceAccountUser"
-
-    gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT \
-    --member "serviceAccount:jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com" \
-    --role "roles/viewer"
-    
-    gcloud iam service-accounts keys create service_account.json  \
-        --iam-account=jenkins-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com  
-    ```
-    These commands will create a service account, grant it three roles, and generate a JSON key file in the home directory.
-2.  Download the **service_account.json** file from the home directory of the GCP console to your computer.
-3.  Print the GCP project name, copy it, and save it.
-    ``` cmd
-    echo $GOOGLE_CLOUD_PROJECT
-    ```
-4. Navigate to the **Artifact Registry**, copy the full path of the repository created before, and save it.
-5.  Navigate to the **Clusters** in **Kubernetes Engine**, copy the cluster Name and location, and save them.
-
-### 3. Save the Important Information in Jenkins
-The information obtained in the previous subsection will be saved in Jenkins as secret text and files for security reasons. 
-1. In the Jenkins user interface, select **Manage Jenkins**.
-2. Click **Credentials**.
-3. Click **System**.
-4. Click **Global credentials (unrestricted)**.
-5. Click **Add credentials**.
-6. In the **Kind** field, select **Secret file**, upload the Service account JSON file, set the **ID** field to **service_account**, and click **Create**.
-7. Add another credential with the Kind **Secret Text**. Set the **ID** field to **project_id** and the **Secret** field to the GCP project ID obtained in the previous subsection.
-8. Add another credential with the Kind **Secret Text**. Set the **ID** field to **repo_path** and the **Secret** field to the full path of the repository obtained in the previous subsection.
-9. Add another credential with the Kind **Secret Text**. Set the **ID** field to **cluster_name** and the **Secret** field to the GKE cluster name obtained in the previous subsection.
-10. Add another credential with the Kind **Secret Text**. Set the **ID** field to **cluster_zone** and the **Secret** field to the GKE cluster location obtained in the previous subsection.
-
-### 4. Enable API
-Search up **Cloud Build API** in the search bar and enable the API.
-
-### 5. Create Jenkins Job 
-1. Read the file [/BinaryCalculatorWebapp/Jenkinsfile_v2](/BinaryCalculatorWebapp/Jenkinsfile_v2)
-    * It reads the secret files and text and sets them as environment variables.
-    * It creates an agent as a Kubernetes pod that creates a container, namely **gcloud**, from the image **google/cloud-sdk:latest**. It includes a Google Cloud SDK with the gcloud CLI.
-    * The first stage, **test**, runs the test cases for the project defined at the path **./BinaryCalculatorWebapp/**.
-    * The second stage, **build**, builds the project defined at the path **./BinaryCalculatorWebapp/**.
-    * The third stage, **containerize**, initializes the gcloud to be connected to the GCP project using the service account. Then, It builds and pushes the docker image of the **BinaryCalculatorWebapp** project to the Artifact Registry repository. 
-    * The fourth stage, **deployment**, initializes the gcloud, then deletes any previous deployment if found and recreates the deployment.
-    * The last stage, **service**, initializes the gcloud then creates a load-balancing service for the deployment if it does not exist. Finally, the IP provided to the service will be displayed if the service is running.
-2. Select **Dashboard**. Click **New Item**. Name it **BinaryCalculator_cicd**. Choose the type to be **Pipeline**.
-3. On the configuration page,
-    1. In the Build Triggers section, check **GitHub hook trigger for GITScm polling**.
-    2. In the Pipeline section,
-        * Set the **Definition** to **Pipeline script from SCM**.
-        * Set the **SCM** to **Git**
-        * Set the **Repository URL** to your GitHub link.
-        * Set the Script Path to **BinaryCalculatorWebapp/Jenkinsfile_v2**
-        * Set the branches to build to ***/main** or leave it blank.
-          
-             ![image](https://github.com/user-attachments/assets/462a065b-e779-48a7-b0d8-3efdac247e5f)
-          
-As the webhook is already configured, it should work automatically when after each commit. Commit any change to the repository. Then, check that the job is been executed and check its report.
+7. To assign an IP to the deployment
+   ```cmd
+   kubectl expose deployment binarycalculator-deployment --type=LoadBalancer --name=binarycalculator-service 
+   ```
+   
+8. Get the IP associated with the service and access the application with that IP at port 8080 using the **http** protocol.
 
 ## Discussion:
-What do pipeline, node, agent, stage, and steps mean in the context of Jenkins?
+1. Briefly summarize what you have learned about docker and Kubernetes, including their terminologies and descriptions.
+2. What are the advantages and disadvantages of using docker images?
 
 ## Design:
-* Update the Binary Calculator project to the latest version you have implemented. Check that the jobs start running and check their report.
-* To access the Binary Calculator application through the URL:
-   * Open **Jenkins**
-   * Open the **BinaryCalculator_cicd**
-   * Click the most recent job finished
-   * Click **Console Output**
-   * Scroll all the way down and there will be an IP address available. Yours will be different.
-     ![image](https://github.com/user-attachments/assets/660aa0c8-dc26-44d5-aa7f-3567592e6f58)
-   * Take the URL, and attach port 8080 and open it in a browser.
-     ![image](https://github.com/user-attachments/assets/ba462c43-db83-42be-aae6-2842db642014)
+* Update the Binary Calculator Application using the last version you implemented in the previous milestone
+* Delete both the running deployment and service. Write YAML file(s) to replace them. Then, redeploy them using the YAML file(s).
 
-## Deliverable
-* A report containing both the discussion and design parts.
-* Your Github link and video links in the report.
-* An audible video of about 3 minutes showing the continuous integration part (the two techniques).
-* An audible video of about 3 minutes showing the design part.
+## Deliverables:
+
+1. A report that includes
+   * The discussion part.
+   * GitHub link with your Binary Calculator Application and the YAML files.
+   * Video Links
+   * Instructions you used to create and deploy your application.
+2. An audible video of about 5 minutes showing the MySQL deploying (the two techniques).  
+3. An audible video of about 3 minutes showing the deploying and executing of the Binary Calculator Application.
+   - Make sure to show the IP of your application in the terminal and the launching of the IP URL in the browser.
+
+**Note**: Delete the running deployments and services after you have submitted to avoid consuming credits.
